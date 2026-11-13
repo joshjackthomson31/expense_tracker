@@ -2,21 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'providers/theme_provider.dart';
 import 'screens/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
+  await Hive.openBox(themeBoxName);
 
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Expense Tracker',
@@ -37,7 +39,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
 
       home: const MainScreen(),
     );

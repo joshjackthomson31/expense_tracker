@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^ls ~/\\.pub-cache/hosted/pub\\.dev 2>/dev/null \\| grep -E \"\\^image-\" ; which rsvg-convert magick convert inkscape node; python3 -c \"import sys;print\\(sys\\.version\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

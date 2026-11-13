@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/theme_provider.dart';
 import 'recurring_transactions_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
@@ -16,6 +19,56 @@ class SettingsScreen extends StatelessWidget {
           children: [
             _heading(context, 'Appearance'),
             const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.brightness_6_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          'Theme',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ThemeMode>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(
+                            value: ThemeMode.system,
+                            label: Text('System'),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.light,
+                            label: Text('Light'),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.dark,
+                            label: Text('Dark'),
+                          ),
+                        ],
+                        selected: {themeMode},
+                        onSelectionChanged: (selection) => ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(selection.first),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Card(
               margin: EdgeInsets.zero,
               child: ListTile(

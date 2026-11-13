@@ -7,6 +7,7 @@ import '../utils/transaction_calculator.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/transaction_tile.dart';
+import '../widgets/upcoming_recurring_card.dart';
 import 'add_transaction_screen.dart';
 import 'transactions_screen.dart';
 
@@ -104,6 +105,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                const UpcomingRecurringCard(),
                 BalanceCard(balance: balance),
                 const SizedBox(height: 16),
                 LayoutBuilder(

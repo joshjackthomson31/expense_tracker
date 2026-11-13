@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:expense_tracker/main.dart';
+import 'package:expense_tracker/models/recurring_transaction.dart';
 import 'package:expense_tracker/models/transaction.dart';
+import 'package:expense_tracker/providers/recurring_transaction_provider.dart';
 import 'package:expense_tracker/providers/transaction_provider.dart';
+import 'package:expense_tracker/repositories/recurring_transaction_repository.dart';
 import 'package:expense_tracker/repositories/transaction_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +24,9 @@ void main() {
         overrides: [
           transactionRepositoryProvider.overrideWithValue(
             _FakeTransactionRepository(),
+          ),
+          recurringTransactionRepositoryProvider.overrideWithValue(
+            _FakeRecurringRepository(),
           ),
         ],
         child: const MyApp(),
@@ -50,6 +56,9 @@ void main() {
           overrides: [
             transactionRepositoryProvider.overrideWithValue(
               _FakeTransactionRepository(),
+            ),
+            recurringTransactionRepositoryProvider.overrideWithValue(
+              _FakeRecurringRepository(),
             ),
           ],
           child: const MyApp(),
@@ -95,6 +104,22 @@ void main() {
       expectSeparateAreas();
     });
   }
+}
+
+class _FakeRecurringRepository implements RecurringTransactionRepository {
+  @override
+  Future<List<RecurringTransaction>> getRecurringTransactions() async => [];
+
+  @override
+  Future<void> saveRecurringTransaction(RecurringTransaction recurring) async {}
+
+  @override
+  Future<void> updateRecurringTransaction(
+    RecurringTransaction recurring,
+  ) async {}
+
+  @override
+  Future<void> deleteRecurringTransaction(String id) async {}
 }
 
 class _FakeTransactionRepository implements TransactionRepository {
