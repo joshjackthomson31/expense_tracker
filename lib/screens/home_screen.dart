@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../utils/date_filter.dart';
+import '../utils/date_formatter.dart';
 import '../utils/transaction_calculator.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/summary_card.dart';
@@ -70,9 +72,13 @@ class HomeScreen extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),
       data: (transactions) {
-        final balance = calculateBalance(transactions);
-        final totalIncome = calculateTotalIncome(transactions);
-        final totalExpenses = calculateTotalExpense(transactions);
+        final now = DateTime.now();
+        final monthTransactions = filterTransactionsByMonth(transactions, now);
+        final balance = calculateBalance(monthTransactions);
+        final totalIncome = calculateTotalIncome(monthTransactions);
+        final totalExpenses = calculateTotalExpense(monthTransactions);
+        final monthLabel = formatDate(DateTime(now.year, now.month))
+            .substring(3);
 
         final recentTransactions = ([
           ...transactions,
@@ -99,14 +105,14 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Here's your spending summary",
+                  'This month · $monthLabel',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 24),
                 const UpcomingRecurringCard(),
-                BalanceCard(balance: balance),
+                BalanceCard(balance: balance, title: 'Monthly balance'),
                 const SizedBox(height: 16),
                 LayoutBuilder(
                   builder: (context, constraints) {

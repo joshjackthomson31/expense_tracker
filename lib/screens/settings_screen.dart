@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/theme_provider.dart';
@@ -121,6 +122,23 @@ class SettingsScreen extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 title: const Text('Data & Storage'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showInformation(
+                  context,
+                  'Data & Storage',
+                  kIsWeb
+                      ? 'Your transactions, budgets, recurring schedules, and '
+                            'theme preference are stored in this browser on this '
+                            'device. There is no cloud sync or automatic backup. '
+                            'Clearing website data or browser storage can remove '
+                            'your records. Data is not shared with the Android app '
+                            'or other devices.'
+                      : 'Your transactions, budgets, recurring schedules, and '
+                            'theme preference are stored locally on this device. '
+                            'There is no cloud sync or automatic backup. Clearing '
+                            'app storage or uninstalling the app can remove your '
+                            'records. Data is not shared with other devices.',
+                ),
                 subtitle: const Text(
                   'Transactions, budgets, and recurring schedules are stored '
                   'locally on this device.',
@@ -132,28 +150,44 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Card(
               margin: EdgeInsets.zero,
-              child: const Column(
+              child: Column(
                 children: [
                   ListTile(
-                    contentPadding: EdgeInsets.symmetric(
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    leading: Icon(Icons.info_outline),
-                    title: Text('About Expense Tracker'),
-                    subtitle: Text(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('About Expense Tracker'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showInformation(
+                      context,
+                      'About Expense Tracker',
+                      'Track income, expenses, budgets, and recurring schedules '
+                          'in Indian Rupees. Home shows the current month; Analytics '
+                          'lets you explore individual months and all-time totals. '
+                          'Recurring reminders appear in the app starting two days '
+                          'before the due date; they are not phone notifications.',
+                    ),
+                    subtitle: const Text(
                       'Track expenses, income, budgets, and analytics.',
                     ),
                   ),
-                  Divider(height: 1, indent: 16, endIndent: 16),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
-                    contentPadding: EdgeInsets.symmetric(
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    leading: Icon(Icons.tag),
-                    title: Text('Version'),
-                    subtitle: Text('1.0.0 (build 1)'),
+                    leading: const Icon(Icons.tag),
+                    title: const Text('Version'),
+                    subtitle: const Text('1.0.0 (build 1)'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showInformation(
+                      context,
+                      'Version',
+                      'Expense Tracker\nVersion 1.0.0 (build 1)',
+                    ),
                   ),
                 ],
               ),
@@ -195,6 +229,23 @@ class SettingsScreen extends ConsumerWidget {
       title,
       style: Theme.of(context).textTheme.titleMedium
           ?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  void _showInformation(BuildContext context, String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        scrollable: true,
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 }

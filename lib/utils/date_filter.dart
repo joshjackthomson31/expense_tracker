@@ -41,11 +41,7 @@ List<Transaction> filterTransactionsByYearMonth(
 
 /// Monday-based, with the time component stripped so hours never shift the week.
 DateTime startOfWeek(DateTime date) {
-  return DateTime(
-    date.year,
-    date.month,
-    date.day,
-  ).subtract(Duration(days: date.weekday - 1));
+  return DateTime(date.year, date.month, date.day - (date.weekday - 1));
 }
 
 List<Transaction> filterTransactionsByWeek(
@@ -53,7 +49,7 @@ List<Transaction> filterTransactionsByWeek(
   DateTime date,
 ) {
   final start = startOfWeek(date);
-  final nextWeek = start.add(const Duration(days: 7));
+  final nextWeek = DateTime(start.year, start.month, start.day + 7);
 
   return transactions.where((transaction) {
     return !transaction.date.isBefore(start) &&

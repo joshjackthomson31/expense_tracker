@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class BalanceCard extends StatelessWidget {
   final double balance;
+  final String title;
 
-  const BalanceCard({super.key, required this.balance});
+  const BalanceCard({
+    super.key,
+    required this.balance,
+    this.title = 'Total balance',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,7 @@ class BalanceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Total balance',
+                  title,
                   style: TextStyle(
                     color: colorScheme.onPrimary.withValues(alpha: 0.85),
                     fontSize: 15,

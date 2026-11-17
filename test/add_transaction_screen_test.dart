@@ -5,6 +5,8 @@ import 'package:expense_tracker/models/transaction.dart';
 import 'package:expense_tracker/models/transaction_type.dart';
 import 'package:expense_tracker/providers/transaction_provider.dart';
 import 'package:expense_tracker/screens/add_transaction_screen.dart';
+import 'package:expense_tracker/utils/date_filter.dart';
+import 'package:expense_tracker/utils/spending_chart_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -166,6 +168,49 @@ void main() {
       expect(find.text(entry.value), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('late-entered expense saves and charts the selected past date', (
+    tester,
+  ) async {
+    final notifier = _Transactions();
+    await openForm(tester, notifier);
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Late expense');
+    await tester.enterText(fields.at(1), '125');
+    tester.testTextInput.hide();
+    await reveal(tester, find.byType(DropdownButtonFormField<ExpenseCategory>));
+    await tester.tap(find.byType(DropdownButtonFormField<ExpenseCategory>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Food').last);
+    await tester.pumpAndSettle();
+    await reveal(tester, find.byIcon(Icons.calendar_today));
+    await tester.tap(find.byIcon(Icons.calendar_today));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Switch to input'));
+    await tester.pumpAndSettle();
+    final now = DateTime.now();
+    final past = DateTime(now.year, now.month, now.day - 9);
+    final context = tester.element(find.byType(DatePickerDialog));
+    final dateField = find.descendant(
+      of: find.byType(DatePickerDialog),
+      matching: find.byType(TextFormField),
+    );
+    await tester.enterText(
+      dateField,
+      MaterialLocalizations.of(context).formatCompactDate(past),
+    );
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await reveal(tester, find.byType(ElevatedButton));
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+    final saved = notifier.saved!;
+    expect(saved.date, past);
+    expect(calculateWeeklySpending([saved], past), {past: 125.0});
+    expect(startOfWeek(past), isNot(startOfWeek(now)));
+    expect(calculateWeeklySpending([saved], now), isEmpty);
+    expect(tester.takeException(), isNull);
   });
 }
 

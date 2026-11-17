@@ -35,7 +35,7 @@ Map<DateTime, double> calculateWeeklySpending(
   DateTime date,
 ) {
   final start = startOfWeek(date);
-  final end = start.add(const Duration(days: 7));
+  final end = DateTime(start.year, start.month, start.day + 7);
 
   return calculateDailySpending(transactions, start, end);
 }

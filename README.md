@@ -5,6 +5,10 @@ A new Flutter project.
 
 ## Home layout
 
+Home income, expenses, and balance cover only the current calendar month.
+Balance is income minus expenses for that month, not a carried-forward account
+balance. Recent transactions remain an all-time list.
+
 The Home add action keeps its button styling in a reserved footer above the
 main navigation. The dashboard scrolls separately so the button cannot cover
 the empty state or recent transactions. On shorter screens, scroll to view the
@@ -22,11 +26,20 @@ flutter test test/add_transaction_screen_test.dart test/widget_test.dart
 
 ## Analytics
 
-The Analytics screen supports Today, Week, and Month, with month/year selection
+The Analytics screen supports Today, Week, Month, and All time, with month/year selection
 in Month mode. Summary cards stack on narrow screens or with larger text.
 Bar charts can scroll horizontally on narrow screens to keep their labels readable;
 the category chart scales to the available width. Empty periods display a message
 while keeping the reporting-period controls available.
+
+Weekly Spending groups expenses by their selected transaction date, not the date
+they are entered. Its Mon–Sun chart shows a dated Monday–Sunday range with
+Previous week, Next week, and This week controls in Week mode. All Week-mode
+summaries and breakdowns follow the selected week, including empty weeks.
+Next week is disabled at the current week. Month mode contains monthly figures
+and trends only; Today and All time do not show the weekly chart.
+Weeks without expenses show an explicit empty message. Calendar-day arithmetic
+keeps week boundaries and bars aligned across daylight-saving changes.
 
 Run the Analytics layout and period-selection tests with:
 
@@ -43,9 +56,11 @@ they do not record transactions or advance a schedule. Pause/resume, recording,
 catch-up, editing, and deletion retain their existing behavior.
 
 Settings displays the fixed INR preference, local-storage information, and app
-information. Its version label is currently `1.0.0 (build 1)`; keep it aligned with
+information. Data & Storage, About Expense Tracker, and Version open informational
+dialogs; they do not export or delete data. Its version label is currently
+`1.0.0 (build 1)`; keep it aligned with
 `pubspec.yaml` when preparing a new release. No theme or currency controls were
-added.
+added in the original polish pass. Settings now includes a System/Light/Dark theme selector.
 
 Run the recurring and Settings presentation tests with:
 

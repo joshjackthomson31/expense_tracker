@@ -1,1 +1,1 @@
-enum AnalyticsPeriod { today, thisWeek, thisMonth }
+enum AnalyticsPeriod { today, thisWeek, thisMonth, allTime }

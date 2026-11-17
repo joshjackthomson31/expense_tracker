@@ -4,13 +4,83 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:expense_tracker/main.dart';
 import 'package:expense_tracker/models/recurring_transaction.dart';
 import 'package:expense_tracker/models/transaction.dart';
+import 'package:expense_tracker/models/transaction_type.dart';
+import 'package:expense_tracker/models/payment_method.dart';
+import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/income_category.dart';
 import 'package:expense_tracker/providers/recurring_transaction_provider.dart';
 import 'package:expense_tracker/providers/transaction_provider.dart';
 import 'package:expense_tracker/repositories/recurring_transaction_repository.dart';
 import 'package:expense_tracker/repositories/transaction_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:expense_tracker/widgets/balance_card.dart';
+import 'package:expense_tracker/widgets/summary_card.dart';
 
 void main() {
+  testWidgets('Home totals include only the current month and year', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    Transaction entry(
+      String id,
+      double amount,
+      DateTime date, {
+      bool income = false,
+    }) => Transaction(
+      id: id,
+      name: id,
+      amount: amount,
+      date: date,
+      type: income ? TransactionType.income : TransactionType.expense,
+      expenseCategory: income ? null : ExpenseCategory.food,
+      incomeCategory: income ? IncomeCategory.salary : null,
+      paymentMethod: PaymentMethod.cash,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          transactionRepositoryProvider.overrideWithValue(
+            _FakeTransactionRepository([
+              entry('Monthly salary', 1000, now, income: true),
+              entry('Monthly expense', 250, now),
+              entry(
+                'Previous month',
+                9000,
+                DateTime(now.year, now.month - 1, 15),
+                income: true,
+              ),
+              entry(
+                'Previous year',
+                4000,
+                DateTime(now.year - 1, now.month, 15),
+              ),
+              entry('Next month', 8000, DateTime(now.year, now.month + 1, 15)),
+            ]),
+          ),
+          recurringTransactionRepositoryProvider.overrideWithValue(
+            _FakeRecurringRepository(),
+          ),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<BalanceCard>(find.byType(BalanceCard)).balance, 750);
+    expect(
+      tester.widget<BalanceCard>(find.byType(BalanceCard)).title,
+      'Monthly balance',
+    );
+    expect(
+      tester
+          .widgetList<SummaryCard>(find.byType(SummaryCard))
+          .map((card) => card.amount),
+      [1000, 250],
+    );
+    await tester.scrollUntilVisible(find.text('Previous month'), 200);
+    expect(find.text('Previous month'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('shows the Expense Tracker home screen', (
     WidgetTester tester,
   ) async {
@@ -123,7 +193,10 @@ class _FakeRecurringRepository implements RecurringTransactionRepository {
 }
 
 class _FakeTransactionRepository implements TransactionRepository {
-  final List<Transaction> _transactions = [];
+  final List<Transaction> _transactions;
+
+  _FakeTransactionRepository([List<Transaction> transactions = const []])
+    : _transactions = List.of(transactions);
 
   @override
   Future<void> saveTransaction(Transaction transaction) async {

@@ -9,6 +9,7 @@ import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../utils/analytics_calculator.dart';
 import '../utils/date_filter.dart';
+import '../utils/date_formatter.dart';
 import '../utils/transaction_helpers.dart';
 import '../utils/spending_chart_calculator.dart';
 import '../utils/transaction_calculator.dart';
@@ -29,6 +30,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   AnalyticsPeriod selectedPeriod = AnalyticsPeriod.thisMonth;
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
+  DateTime selectedWeekStart = startOfWeek(DateTime.now());
 
   static const monthLabels = [
     'Jan',
@@ -66,7 +68,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         return filterTransactionsByDay(transactions, now);
 
       case AnalyticsPeriod.thisWeek:
-        return filterTransactionsByWeek(transactions, now);
+        return filterTransactionsByWeek(transactions, selectedWeekStart);
 
       case AnalyticsPeriod.thisMonth:
         return filterTransactionsByYearMonth(
@@ -74,6 +76,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           selectedYear,
           selectedMonth,
         );
+      case AnalyticsPeriod.allTime:
+        return transactions;
     }
   }
 
@@ -105,20 +109,31 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final periodSelector = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
 
-      child: SegmentedButton<AnalyticsPeriod>(
-        segments: const [
-          ButtonSegment(value: AnalyticsPeriod.today, label: Text('Today')),
-          ButtonSegment(value: AnalyticsPeriod.thisWeek, label: Text('Week')),
-          ButtonSegment(value: AnalyticsPeriod.thisMonth, label: Text('Month')),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SegmentedButton<AnalyticsPeriod>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: AnalyticsPeriod.today, label: Text('Today')),
+            ButtonSegment(value: AnalyticsPeriod.thisWeek, label: Text('Week')),
+            ButtonSegment(
+              value: AnalyticsPeriod.thisMonth,
+              label: Text('Month'),
+            ),
+            ButtonSegment(
+              value: AnalyticsPeriod.allTime,
+              label: Text('All time'),
+            ),
+          ],
 
-        selected: {selectedPeriod},
+          selected: {selectedPeriod},
 
-        onSelectionChanged: (selection) {
-          setState(() {
-            selectedPeriod = selection.first;
-          });
-        },
+          onSelectionChanged: (selection) {
+            setState(() {
+              selectedPeriod = selection.first;
+            });
+          },
+        ),
       ),
     );
 
@@ -194,6 +209,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               _sectionHeading(context, 'Reporting Period'),
               periodSelector,
               monthSelector,
+              if (selectedPeriod == AnalyticsPeriod.thisWeek)
+                _buildWeekSelector(context),
               const SizedBox(height: 24),
               Card(
                 margin: EdgeInsets.zero,
@@ -222,6 +239,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   ),
                 ),
               ),
+              if (selectedPeriod == AnalyticsPeriod.thisWeek) ...[
+                const SizedBox(height: 24),
+                _buildWeeklySpending(context, transactions),
+              ],
             ],
           ),
         ),
@@ -269,10 +290,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         .where((entry) => entry.value > 0)
         .toList();
 
-    final today = DateTime.now();
-    final weekStart = startOfWeek(today);
-    final dailySpending = calculateWeeklySpending(transactions, today);
-
     final monthlySpending = calculateMonthlySpending(
       transactions,
       selectedDate,
@@ -290,12 +307,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             _sectionHeading(context, 'Reporting Period'),
             periodSelector,
             monthSelector,
+            if (selectedPeriod == AnalyticsPeriod.thisWeek)
+              _buildWeekSelector(context),
 
             const SizedBox(height: 24),
             _sectionHeading(context, 'Financial Summary'),
+            const SizedBox(height: 4),
+            Text(switch (selectedPeriod) {
+              AnalyticsPeriod.today => 'Today',
+              AnalyticsPeriod.thisWeek => 'Selected week',
+              AnalyticsPeriod.thisMonth =>
+                '${monthLabels[selectedMonth - 1]} $selectedYear',
+              AnalyticsPeriod.allTime => 'All time',
+            }),
             const SizedBox(height: 12),
 
-            BalanceCard(balance: balance),
+            BalanceCard(balance: balance, title: 'Period balance'),
 
             const SizedBox(height: 16),
 
@@ -325,46 +352,34 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   value: '${savingsRate.toStringAsFixed(1)}%',
                   icon: Icons.savings,
                 ),
-                AnalyticsSummaryCard(
-                  title: 'Expenses vs Last Month',
-                  value: expenseChange == null
-                      ? 'No previous data'
-                      : '${expenseChange >= 0 ? '+' : ''}'
-                            '${expenseChange.toStringAsFixed(1)}%',
-                  icon: Icons.compare_arrows,
-                ),
+                if (selectedPeriod == AnalyticsPeriod.thisMonth)
+                  AnalyticsSummaryCard(
+                    title: 'Expenses vs Last Month',
+                    value: expenseChange == null
+                        ? 'No previous data'
+                        : '${expenseChange >= 0 ? '+' : ''}'
+                              '${expenseChange.toStringAsFixed(1)}%',
+                    icon: Icons.compare_arrows,
+                  ),
               ],
             ),
 
-            const SizedBox(height: 24),
-
-            _sectionHeading(context, 'Spending Trends'),
-            const SizedBox(height: 12),
-            Text(
-              'Weekly Spending',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-
-            _ChartViewport(
-              child: WeeklySpendingChart(
-                dailySpending: dailySpending,
-                weekStart: weekStart,
+            if (selectedPeriod == AnalyticsPeriod.thisWeek) ...[
+              const SizedBox(height: 24),
+              _buildWeeklySpending(context, transactions),
+            ],
+            if (selectedPeriod == AnalyticsPeriod.thisMonth ||
+                selectedPeriod == AnalyticsPeriod.allTime) ...[
+              const SizedBox(height: 24),
+              Text(
+                'Monthly Spending Trend',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Text(
-              'Monthly Spending Trend',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-
-            const SizedBox(height: 16),
-
-            _ChartViewport(
-              child: MonthlySpendingChart(monthlySpending: monthlySpending),
-            ),
+              const SizedBox(height: 16),
+              _ChartViewport(
+                child: MonthlySpendingChart(monthlySpending: monthlySpending),
+              ),
+            ],
 
             const SizedBox(height: 24),
 
@@ -466,6 +481,95 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ?.copyWith(fontWeight: FontWeight.bold),
     );
   }
+
+  void _changeWeek(int offset) {
+    final next = DateTime(
+      selectedWeekStart.year,
+      selectedWeekStart.month,
+      selectedWeekStart.day + offset * 7,
+    );
+    if (next.isAfter(startOfWeek(DateTime.now()))) return;
+    setState(() {
+      selectedWeekStart = next;
+    });
+  }
+
+  Widget _buildWeekSelector(BuildContext context) {
+    final weekEnd = DateTime(
+      selectedWeekStart.year,
+      selectedWeekStart.month,
+      selectedWeekStart.day + 6,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          '${formatDate(selectedWeekStart)} - ${formatDate(weekEnd)}',
+          key: const Key('weekly-spending-date-range'),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'All figures below use this week and the selected expense dates.',
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              tooltip: 'Previous week',
+              onPressed: () => _changeWeek(-1),
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Expanded(
+              child: TextButton(
+                onPressed: () => setState(() {
+                  selectedWeekStart = startOfWeek(DateTime.now());
+                }),
+                child: const Text('This week', textAlign: TextAlign.center),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Next week',
+              onPressed: selectedWeekStart.isBefore(startOfWeek(DateTime.now()))
+                  ? () => _changeWeek(1)
+                  : null,
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeeklySpending(
+    BuildContext context,
+    List<Transaction> transactions,
+  ) {
+    final dailySpending = calculateWeeklySpending(
+      transactions,
+      selectedWeekStart,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Weekly Spending', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        if (dailySpending.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('No expenses for this week.'),
+          ),
+        _ChartViewport(
+          child: WeeklySpendingChart(
+            dailySpending: dailySpending,
+            weekStart: selectedWeekStart,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _ResponsiveSummary extends StatelessWidget {
@@ -475,6 +579,7 @@ class _ResponsiveSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (children.length == 1) return children.single;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 350 ||

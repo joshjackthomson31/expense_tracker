@@ -11,7 +11,15 @@ class WeeklySpendingChart extends StatelessWidget {
     required this.weekStart,
   });
 
-  static const weekdayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static const weekdayLabels = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +29,11 @@ class WeeklySpendingChart extends StatelessWidget {
       child: BarChart(
         BarChartData(
           barGroups: List.generate(7, (index) {
-            final date = weekStart.add(Duration(days: index));
+            final date = DateTime(
+              weekStart.year,
+              weekStart.month,
+              weekStart.day + index,
+            );
             final amount = dailySpending[date] ?? 0;
 
             return BarChartGroupData(
@@ -46,6 +58,11 @@ class WeeklySpendingChart extends StatelessWidget {
                 showTitles: true,
 
                 getTitlesWidget: (value, meta) {
+                  if (value < 0 ||
+                      value >= weekdayLabels.length ||
+                      value != value.roundToDouble()) {
+                    return const SizedBox.shrink();
+                  }
                   return Text(weekdayLabels[value.toInt()]);
                 },
               ),
